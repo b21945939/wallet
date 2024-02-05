@@ -1,4 +1,4 @@
-import { execSync } from 'child_process';
+import { exec, execSync } from 'child_process';
 import { get } from 'http';
 import * as readline from 'readline';
 import { appendFileSync, readFileSync, writeFileSync,unlink, existsSync } from 'fs';
@@ -193,9 +193,24 @@ function getKeypairFromJSON() {
     }
 }
 
+function updateBalances() {
+    if(existsSync(join(__dirname, 'wallet.json')) === true){
+        const contents = readFileSync(join(__dirname, 'wallet.json'), 'utf-8');
+        const wallets = JSON.parse(contents);
+        for(let i = 0; i < wallets.wallets.length; i++){
+            wallets.wallets[i].balance = parseFloat(getBalanceFromNetworkByPublicKey(wallets.wallets[i].publicKey).substring(0, getBalanceFromNetworkByPublicKey(wallets.wallets[i].publicKey).length-5));
+        }
+        writeFileSync(join(__dirname, 'wallet.json'), JSON.stringify(wallets));
+    }
+    else{
+        console.log('No wallet found in the system');
+        return null;
+    }
+}
 
 function getUserInput() {
-    rl.question('What do u wanna do? [new/airdrop [X]/balance/transfer [otherPublicKey][Amount]]', (answer) => {
+    updateBalances();
+    rl.question('What do u wanna do? \nnew\nairdrop [X]\nbalance\ntransfer [otherPublicKey][Amount]\nchange [otherPublicKey]\nwallets\nstatistics\n', (answer) => {
         if(answer === 'new') {
             const solana = execSync('wsl --shell-type login solana-keygen new --no-passphrase --outfile willbedeleted.json').toString();
             const wallet = new Wallet();
@@ -252,6 +267,40 @@ function getUserInput() {
             else{
                 console.log('Invalid amount');
             }
+        }
+        else if(answer.substring(0, 6) === 'change') {
+            let newPublicKey = answer.substring(7, 7+44);
+            if(existsSync(join(__dirname, 'wallet.json')) === true){
+                const contents = readFileSync(join(__dirname, 'wallet.json'), 'utf-8');
+                const wallets = JSON.parse(contents);
+                for(let i = 0; i < wallets.wallets.length; i++){
+                    if(wallets.wallets[i].publicKey === newPublicKey){
+                        currentPublicKey = newPublicKey;
+                        console.log('Current public key: ' + currentPublicKey);
+                        return;
+                    }
+                }
+                console.log('Invalid public key');
+            }
+        }
+        else if(answer === 'wallets') {
+            const wallets = getWallets();
+            console.log(wallets);
+        }
+        else if(answer === 'statistics'){
+            console.log('-----------------');
+            const solana = execSync('wsl --shell-type login solana supply').toString();
+            console.log(solana);
+            console.log('-----------------');
+            const height = execSync('wsl --shell-type login solana block-height').toString();
+            console.log('Height: '+height);
+            console.log('-----------------');
+            const production = execSync('wsl --shell-type login solana block-production').toString();
+            console.log(production);
+            console.log('-----------------');
+            const blockTime = execSync('wsl --shell-type login solana block-time').toString();
+            console.log(blockTime);
+            console.log('-----------------');
         }
         else {
             console.log('Invalid command');
