@@ -1,4 +1,4 @@
-import { exec, execSync } from 'child_process';
+import { exec, execSync, spawn } from 'child_process';
 import { get } from 'http';
 import * as readline from 'readline';
 import { appendFileSync, readFileSync, writeFileSync,unlink, existsSync } from 'fs';
@@ -207,6 +207,19 @@ function updateBalances() {
         return null;
     }
 }
+
+const child = spawn('wsl', ['--shell-type', 'login', 'solana', 'logs']);
+
+child.stdout.on('data', (data) => {
+    console.log('----------NOTIFICATION-------');
+    console.log(`stdout: ${data}`);
+});
+
+child.stderr.on('data', (data) => {
+    console.log('----------NOTIFICATION-------');
+    console.error(`stderr: ${data}`);
+});
+
 
 function getUserInput() {
     updateBalances();
