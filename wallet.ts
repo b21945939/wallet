@@ -290,10 +290,8 @@ function getUserInput() {
                     if(wallets.wallets[i].publicKey === newPublicKey){
                         currentPublicKey = newPublicKey;
                         console.log('Current public key: ' + currentPublicKey);
-                        return;
                     }
                 }
-                console.log('Invalid public key');
             }
         }
         else if(answer === 'wallets') {
